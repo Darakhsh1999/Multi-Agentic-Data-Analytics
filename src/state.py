@@ -1,4 +1,6 @@
 from typing import TypedDict
+from pathlib import Path
+
 
 class AgentState(TypedDict):
-    uploaded_files: list[str]
+    uploaded_file_paths: list[Path]
