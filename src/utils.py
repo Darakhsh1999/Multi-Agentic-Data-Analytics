@@ -1,11 +1,10 @@
 import os
-from langchain_core.tools import tool
-from langgraph.graph.graph import CompiledGraph
 import pandas as pd
+from langgraph.graph.graph import CompiledGraph
 from pathlib import Path
-from typing import Union
+from PyPDF2 import PdfReader
 from docx import Document
-import PyPDF2
+from typing import Union
 
 def convert_to_png(graph: CompiledGraph, image_name: str = "graph") -> None:
     try:
@@ -18,21 +17,16 @@ def convert_to_png(graph: CompiledGraph, image_name: str = "graph") -> None:
         print(f"Exception: {e}")
 
 
-@tool
-def load_file_data(file_path: Union[str, os.PathLike]) -> str:
+def load_file_context(file_path: Union[str, os.PathLike]) -> str:
     """Load and process file data into a text string for LLM context.
-    
+
     Args:
         file_path (Union[str, os.PathLike]): Path to the file to be loaded
-        
+
     Returns:
         str: Text content of the file or an error message
-        
-    Raises:
-        FileNotFoundError: If the file doesn't exist
-        PermissionError: If there's a permission error
-        Exception: For other file processing errors
     """
+
     try:
         # Convert to Path object for better path handling
         path = Path(file_path)
@@ -64,7 +58,7 @@ def load_file_data(file_path: Union[str, os.PathLike]) -> str:
         elif file_ext == 'pdf':
             try:
                 with open(path, 'rb') as f:
-                    reader = PyPDF2.PdfReader(f)
+                    reader = PdfReader(f)
                     text = []
                     for page in reader.pages:
                         page_text = page.extract_text()
@@ -109,23 +103,26 @@ def load_file_data(file_path: Union[str, os.PathLike]) -> str:
         return f"Error processing file {file_path}: {str(e)}"
     
     
-@tool
 def save_file(filename: str, content: str) -> str:
-    """Writes the content to the specified file.
-    
+    """Writes the index content to a file
+    This function takes the index content and writes it to a file at the specified path.
+    It returns a success message if the file is written successfully, or an error message if not.
+
     Args:
-        filename (str): The name of the file to write to (must be a .txt file)
-        content (str): The content to write to the file
-        
+        filename (str): path to the file to write to
+        content (str): the index content to write
+
     Returns:
-        str: Success message or error message if the operation fails
+        str: success message if the file is written successfully, or an error message if not
     """
+    
     try:
         with open(filename, "w") as f:
             f.write(content)
-        return f"Successfully wrote to {filename}"
+        return f"Successfully wrote contents to index file {filename}"
     except Exception as e:
         return f"Error writing to {filename}: {str(e)}"
+
 
 
 if __name__ == "__main__":

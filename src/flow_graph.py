@@ -1,6 +1,8 @@
 from utils import convert_to_png
 from langgraph.graph import StateGraph
+from langgraph.prebuilt import ToolNode
 from state import AgentState
+from index_agent import index_agent, index_tools
 
 
 
@@ -22,7 +24,8 @@ def temp(state: AgentState) -> AgentState:
     return state
 
 # Add Nodes
-graph.add_node("index_agent", temp)
+graph.add_node("index_agent", index_agent)
+index_agent_node = ToolNode(tools=index_tools)
 graph.add_node("agent_clean", temp)
 graph.add_node("agent_analyze", temp)
 graph.add_node("agent_visualize", temp)
