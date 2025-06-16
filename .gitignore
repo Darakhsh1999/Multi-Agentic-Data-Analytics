@@ -2,3 +2,4 @@
 .vscode
 example-data/
 **/__pycache__/
+.env
