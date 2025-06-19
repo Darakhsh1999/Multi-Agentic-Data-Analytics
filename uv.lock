@@ -32,6 +32,24 @@ wheels = [
 ]
 
 [[package]]
+name = "anthropic"
+version = "0.54.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "distro" },
+    { name = "httpx" },
+    { name = "jiter" },
+    { name = "pydantic" },
+    { name = "sniffio" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/89/28/80cb9bb6e7ce77d404145b51da4257455805c17f0a6be528ff3286e3882f/anthropic-0.54.0.tar.gz", hash = "sha256:5e6f997d97ce8e70eac603c3ec2e7f23addeff953fbbb76b19430562bb6ba815", size = 312376 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/de/b9/6ffb48e82c5e97b03cecee872d134a6b6666c2767b2d32ed709f3a60a8fe/anthropic-0.54.0-py3-none-any.whl", hash = "sha256:c1062a0a905daeec17ca9c06c401e4b3f24cb0495841d29d752568a1d4018d56", size = 288774 },
+]
+
+[[package]]
 name = "anyio"
 version = "4.9.0"
 source = { registry = "https://pypi.org/simple" }
@@ -175,10 +193,11 @@ name = "distributed-data-analytics-agents"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "langchain" },
+    { name = "langchain", extra = ["anthropic"] },
     { name = "langchain-ollama" },
     { name = "langchain-openai" },
     { name = "langgraph" },
+    { name = "langsmith" },
     { name = "openai" },
     { name = "openpyxl" },
     { name = "pandas" },
@@ -190,10 +209,11 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "langchain", specifier = ">=0.3.25" },
+    { name = "langchain", extras = ["anthropic"], specifier = ">=0.3.25" },
     { name = "langchain-ollama", specifier = ">=0.3.3" },
     { name = "langchain-openai", specifier = ">=0.3.23" },
     { name = "langgraph", specifier = ">=0.4.7" },
+    { name = "langsmith", specifier = ">=0.3.45" },
     { name = "openai", specifier = ">=1.86.0" },
     { name = "openpyxl", specifier = ">=3.1.5" },
     { name = "pandas", specifier = ">=2.3.0" },
@@ -449,6 +469,25 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/fc/f9/a256609096a9fc7a1b3a6300a97000091efabdf21555a97988f93d4d9258/langchain-0.3.25.tar.gz", hash = "sha256:a1d72aa39546a23db08492d7228464af35c9ee83379945535ceef877340d2a3a", size = 10225045 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ed/5c/5c0be747261e1f8129b875fa3bfea736bc5fe17652f9d5e15ca118571b6f/langchain-0.3.25-py3-none-any.whl", hash = "sha256:931f7d2d1eaf182f9f41c5e3272859cfe7f94fc1f7cef6b3e5a46024b4884c21", size = 1011008 },
+]
+
+[package.optional-dependencies]
+anthropic = [
+    { name = "langchain-anthropic" },
+]
+
+[[package]]
+name = "langchain-anthropic"
+version = "0.3.15"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anthropic" },
+    { name = "langchain-core" },
+    { name = "pydantic" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/47/c5/c5cd0164e342812787c157a385e8a9529510a514a5fe6acb487e990e82b0/langchain_anthropic-0.3.15.tar.gz", hash = "sha256:e62de2b0175c1fcca49fc4cc1f8742a4ab2385f0b94b7df4533fd06d577efd36", size = 54218 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e7/c0/9a1d58ab8718505bf25b7ad375a2a104886dfe64519d8b96442bb295637e/langchain_anthropic-0.3.15-py3-none-any.whl", hash = "sha256:894d670bc44e68e0b1f2f09e7e7f977a8f07085a596f114c79aefbb789f6d88d", size = 28054 },
 ]
 
 [[package]]
