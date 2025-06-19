@@ -19,7 +19,7 @@ class FileContext(BaseModel):
     file_type: str = Field(description="The type of the file")
     description: str = Field(description="A brief description of the file")
     structure: str = Field(description="The structure of the file if it is a table, image, etc. Keep it short and simple. For text files, just say typical text structure.")
-    metadata: str = Field(description="Any additional metadata about the file if it is present inside the content")
+    metadata: str = Field(description="Any additional metadata about the file if it is present inside the content. Keep it short and simple.")
 
 
 SYSTEM_PROMPT = f"""
@@ -31,29 +31,33 @@ You will be given the contents of a file in text format. You should store the fo
 - Any potential structure of the data in the file, such as tables, images, etc. Keep this short and simple.
 - Any additional metadata about the file if it is present inside the content. Keep this short and simple.
 
-For each file, you should write this information to the index file in the following format:
-# "file name" - "file type"
-Path: "file path"
-Description: "brief description"
-Structure: "structure"
-Metadata: "metadata"
-
-Content:
-{{content}}
+For each file, you should retrieve information to the index file about the:
+- File name
+- File type
+- Description
+- Structure
+- Metadata
 """
 
-model = ChatOpenAI(
-    model="gpt-4o-mini",
-).with_structured_output(FileContext)
+use_openai = False
 
-# model = init_chat_model(
-#     model="qwen3:8b",
-#     model_provider="ollama",
-#     base_url="http://localhost:11434",
-#     temperature=0
-# ).with_structured_output(FileContext)
+if use_openai:
+    model = ChatOpenAI(
+        model="gpt-4o-mini",
+    ).with_structured_output(FileContext)
+else:
+    model = init_chat_model(
+        model="qwen3:8b",
+        model_provider="ollama",
+        base_url="http://localhost:11434",
+        temperature=0
+    ).with_structured_output(FileContext)
+
 
 def index_agent(state: AgentState) -> AgentState:
+
+    if state["debug"] == 1:
+        print(f"Entered index_agent")
 
 
     file_paths = state["uploaded_file_paths"]
@@ -68,20 +72,21 @@ def index_agent(state: AgentState) -> AgentState:
         file_type = os.path.splitext(file_path)[1]
         
         messages = [
-            SystemMessage(content=SYSTEM_PROMPT.format(content=content)),
-            HumanMessage(content=f"Please index the content of the file: {file_name} with the following content:\n{file_content}")
+            SystemMessage(content=SYSTEM_PROMPT),
+            HumanMessage(content=f"/nothink\nPlease index the content of the file: {file_name} with the following content:\n{file_content}")
         ]
 
         # Get the initial response
-        response = model.invoke(input=messages)
+        response: FileContext = model.invoke(input=messages)
 
         file_info = f"""
-        # {file_name} - {file_type}
-        Path: {file_path}
-        Description: {response.description}
-        Structure: {response.structure}
-        Metadata: {response.metadata}
-        """
+File name: {file_name}
+File type: {file_type}
+File path: {file_path}
+Description: {response.description}
+Structure: {response.structure}
+Metadata: {response.metadata}
+"""
 
         content += file_info
 
