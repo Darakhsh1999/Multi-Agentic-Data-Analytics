@@ -1,2 +1,2 @@
 # Distributed Data Analytics Agents
-Multi-agent system performing data analytics and statistical modeling
+Multi-agent system performing agentic data cleaning
