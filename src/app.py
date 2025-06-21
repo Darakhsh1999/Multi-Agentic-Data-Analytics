@@ -1,12 +1,13 @@
 import os
-import os.path as osp
 import uuid
-import constants
 import graph
+import constants
+import os.path as osp
 import streamlit as st
 from state import AgentState
 from typing import List, Tuple
 from agents import ui_llm
+from langgraph.graph.graph import CompiledGraph
 from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
@@ -20,6 +21,7 @@ if 'uuid' not in st.session_state:
     uuid = str(uuid.uuid4())
     os.makedirs(osp.join('runs', uuid, "data"))
     os.makedirs(osp.join('runs', uuid, "logs"))
+    os.makedirs(osp.join('runs', uuid, "output"))
     st.session_state.uuid = uuid
 
 if 'uploaded_files' not in st.session_state:
@@ -37,10 +39,12 @@ if 'chat_history' not in st.session_state:
 if "agent_state" not in st.session_state:
     st.session_state.agent_state = AgentState(
         uuid=st.session_state.uuid,
-        messages=[]
+        messages=[],
+        debug=True,
+        memory_path=osp.join('runs', st.session_state.uuid)
     )
 
-def invoke_llm():
+def invoke_llm() -> BaseMessage | CompiledGraph:
     """Invoke the LLM with the given prompt."""
 
     # Get chat history
@@ -53,10 +57,6 @@ def invoke_llm():
     # Check if tool call (e.g. start_graph_workflow)
     if response.tool_calls:
 
-        # compiled_graph = graph.create_graph()
-        # agent_state = st.session_state.agent_state
-        # agent_state = compiled_graph.invoke(agent_state)
-
         for tool_call in response.tool_calls:
 
             st.session_state.chat_history.append(("tool", f"Called tool: {tool_call["name"]} with args: {tool_call["args"]}")) # For streamlit rendering
@@ -66,9 +66,21 @@ def invoke_llm():
                 tool_call_id=tool_call["id"]
             )) # For agent processing
         
-        return None
-    
-    return response
+        # Render tool call
+        with st.chat_message("tool", avatar="🛠️"):
+            st.markdown(
+                f"""
+                <div style="border-radius: 0.5rem; border: 1px solid #ccc; padding: 0.5rem; margin: 0.5rem 0">
+                    {f"Called tool: {tool_call["name"]} with args: {tool_call["args"]}"}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        
+        return graph.create_graph()
+
+    else: # Regular response  
+        return response
         
 
 def handle_file_upload(uploaded_files) -> None:
@@ -97,6 +109,7 @@ st.title("Data Cleaning Agent 🧹")
 # Main area shows either uploader or chat interface
 if st.session_state.show_chat:
 
+    # Render chat history
     for role, message in st.session_state.chat_history:
         if role == "assistant":
             with st.chat_message("assistant", avatar="🤖"):
@@ -127,15 +140,27 @@ if st.session_state.show_chat:
 
         # Invoke UI agent
         try:
+
             response = invoke_llm()
 
-            if response is None:
+            if isinstance(response, BaseMessage): # Regular message
+                st.session_state.chat_history.append(("assistant", response.content))
+                st.session_state.agent_state["messages"].append(AIMessage(content=response.content)) # For agent processing
                 st.rerun()
+            elif isinstance(response, CompiledGraph): # Compiled graph
 
-            # Add assistant response to chat history
-            st.session_state.chat_history.append(("assistant", response.content))
-            st.session_state.agent_state["messages"].append(AIMessage(content=response.content)) # For agent processing
-            st.rerun()
+                # Write uploaded file to memory
+                for filename, file_content in st.session_state.uploaded_files:
+                    with open(os.path.join(st.session_state.agent_state["memory_path"], "data", filename), "wb") as f:
+                        f.write(file_content)
+
+                compiled_graph: CompiledGraph = response
+                result: AgentState = compiled_graph.invoke(st.session_state.agent_state)
+                st.session_state.agent_state = result
+                # TODO update chat history with tool calls and agent responses
+            else:
+                print(f"Unknown response type: {type(response)}")
+                
         except Exception as e:
             print(f"Error invoking UI agent: {e}")
             response = "Error invoking UI agent, try again."

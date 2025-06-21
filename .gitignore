@@ -1,5 +1,6 @@
 .venv
 .vscode
 example-data/
+src/runs/
 **/__pycache__/
 .env

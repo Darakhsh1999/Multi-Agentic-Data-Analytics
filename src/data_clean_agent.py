@@ -2,14 +2,12 @@ import os
 from tqdm import tqdm
 from state import AgentState
 from agents import agent_data_clean
-from data_clean_agent_tools import load_tabular_data
-from constants import DATA_CLEAN_AGENT_SYSTEM_PROMPT
-from langchain_core.messages import SystemMessage, HumanMessage
-
+from data_clean_agent_tools import load_tabular_data, set_dataframe, get_dataframe
+from langchain.schema import HumanMessage
 
 def data_clean_agent(state: AgentState) -> AgentState:
 
-    if state["debug"] == 1:
+    if state["debug"]:
         print(f"Entered data_clean_agent")
 
     # Load in data files from memory path
@@ -24,31 +22,31 @@ def data_clean_agent(state: AgentState) -> AgentState:
     # Filter out only tabular files
     tabular_files = list(filter(lambda x: x.split(".")[-1] in tabular_formats, file_paths))
 
+
     for file in tqdm(tabular_files, desc="Processing files"):
 
         # Load in data file
         df = load_tabular_data(file)
-        state["current_df"] = df
+        set_dataframe(df)
 
         # Run agent with state
-        agent_input = {
-            "messages": [
-                SystemMessage(content=DATA_CLEAN_AGENT_SYSTEM_PROMPT),
-                HumanMessage(content=f"Please clean the data in the following file:\n{file}")
-            ],
-            "current_df": df, # Pass the current DataFrame to the agent
-        }
+        print("INITIAL STATE", state)
+        print(5*"\n")
+        input("Press Enter to continue...")
         result = agent_data_clean.invoke(
-            agent_input,
+            HumanMessage(content="Please clean the data by using the available tools."),
+            config={"recursion_limit": 30},
             debug=(True if state["debug"] == 1 else False)
         )
-        print("REEEEEESULT", result)
+        print(5*"\n")
+        print("REEEEEESULT", result, type(result))
+        print(5*"\n")
         state.update(result)  # Update state with any changes from the agent
-
         # Save cleaned file
         cleaned_file_name = f"cleaned_{os.path.basename(file)}"
-        cleaned_file_path = os.path.join(state["memory_path"], "data", cleaned_file_name)
-        state["current_df"].to_csv(cleaned_file_path, index=False)
+        cleaned_file_path = os.path.join(state["memory_path"], "output", cleaned_file_name)
+        cleaned_df = get_dataframe()
+        cleaned_df.to_csv(cleaned_file_path, index=False)
 
     return state
 
@@ -57,9 +55,10 @@ if __name__ == "__main__":
 
     # Example usage
     state = AgentState(
-        uuid="3c6bb400-2ada-4681-90d3-d5d0ce12a67d",
-        memory_path=os.path.join("runs", "3c6bb400-2ada-4681-90d3-d5d0ce12a67d"),
-        debug=1
+        messages=[],
+        uuid="6cf67e12-87ce-4135-88c8-08845f4812f5",
+        memory_path=os.path.join("runs", "6cf67e12-87ce-4135-88c8-08845f4812f5"),
+        debug=1,
     )
 
     output_state = data_clean_agent(state)

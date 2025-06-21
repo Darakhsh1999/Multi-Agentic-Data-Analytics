@@ -1,13 +1,11 @@
-import time
-import constants
-from data_clean_agent_tools import get_cleaning_tools
-from pydantic import BaseModel, Field
-from ui_agent_tools import start_graph_workflow
 from state import AgentState
+from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI
+from ui_agent_tools import start_graph_workflow
 from langchain.chat_models import init_chat_model
 from langgraph.prebuilt import create_react_agent
-
+from constants import DATA_CLEAN_AGENT_SYSTEM_PROMPT
+from data_clean_agent_tools import get_dataframe_tools
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -27,16 +25,16 @@ ui_llm = init_chat_model(
 
 data_cleaning_llm = ChatOpenAI(
     model="gpt-4o-mini",
-    temperature=0
+    temperature=0.1
 )
 
 # Create the agent
 agent_data_clean = create_react_agent(
     model=data_cleaning_llm,
-    tools=get_cleaning_tools(),
-    prompt=constants.DATA_CLEAN_AGENT_SYSTEM_PROMPT,
+    tools=get_dataframe_tools(),
+    prompt=DATA_CLEAN_AGENT_SYSTEM_PROMPT,
+    state_schema=AgentState
 )
-
 
 ## Indexing ##
 

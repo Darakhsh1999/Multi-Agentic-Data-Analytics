@@ -11,5 +11,6 @@ class AgentState(TypedDict, total=False):
     uuid: uuid.UUID
     memory_path: Path
     current_df: Any  # pd.DataFrame
-    indexed: bool
-    debug: int
+    indexed: bool = False
+    debug: bool = False
+    remaining_steps: int
