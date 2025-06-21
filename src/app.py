@@ -1,11 +1,29 @@
+import os
+import os.path as osp
+import uuid
+import constants
+import graph
 import streamlit as st
-from pathlib import Path
-from typing import Dict, List, Tuple
-import tempfile
+from state import AgentState
+from typing import List, Tuple
+from agents import ui_llm
+from langchain_core.messages import (
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+    AIMessage,
+    ToolMessage
+)
 
 # Initialize session state
-if 'file_paths' not in st.session_state:
-    st.session_state.file_paths: Dict[str, str] = {}  # filename -> filepath
+if 'uuid' not in st.session_state:
+    uuid = str(uuid.uuid4())
+    os.makedirs(osp.join('runs', uuid, "data"))
+    os.makedirs(osp.join('runs', uuid, "logs"))
+    st.session_state.uuid = uuid
+
+if 'uploaded_files' not in st.session_state:
+    st.session_state.uploaded_files: List[Tuple[str, bytes]] = []  # List of (filename, file content)
 
 if 'uploader_key' not in st.session_state:
     st.session_state.uploader_key = 0
@@ -16,68 +34,132 @@ if 'show_chat' not in st.session_state:
 if 'chat_history' not in st.session_state:
     st.session_state.chat_history: List[Tuple[str, str]] = []  # List of (role, message)
 
-# Create temp directory for uploaded files
-if 'temp_dir' not in st.session_state:
-    st.session_state.temp_dir = Path(tempfile.mkdtemp(prefix="doc_chat_"))
-    st.session_state.temp_dir.mkdir(exist_ok=True)
+if "agent_state" not in st.session_state:
+    st.session_state.agent_state = AgentState(
+        uuid=st.session_state.uuid,
+        messages=[]
+    )
 
-def handle_file_upload(files) -> None:
-    """Save uploaded files and store their paths."""
-    for file in files:
-        if file.name not in st.session_state.file_paths:
-            # Save to temp location
-            temp_path = st.session_state.temp_dir / file.name
-            with open(temp_path, "wb") as f_out:
-                f_out.write(file.getvalue())
-            st.session_state.file_paths[file.name] = str(temp_path.absolute())
-        st.session_state.uploader_key += 1  # Force widget reset
+def invoke_llm():
+    """Invoke the LLM with the given prompt."""
+
+    # Get chat history
+    chat_history: List[BaseMessage] = st.session_state.agent_state["messages"]
+    chat_history[-1].content += "/nothink"
+
+    # Call the UI agent
+    response = ui_llm.invoke([SystemMessage(content=constants.UI_AGENT_SYSTEM_PROMPT)] + chat_history)
+
+    # Check if tool call (e.g. start_graph_workflow)
+    if response.tool_calls:
+
+        # compiled_graph = graph.create_graph()
+        # agent_state = st.session_state.agent_state
+        # agent_state = compiled_graph.invoke(agent_state)
+
+        for tool_call in response.tool_calls:
+
+            st.session_state.chat_history.append(("tool", f"Called tool: {tool_call["name"]} with args: {tool_call["args"]}")) # For streamlit rendering
+            st.session_state.agent_state["messages"].append(ToolMessage(
+                content=response.content,
+                name=tool_call["name"],
+                tool_call_id=tool_call["id"]
+            )) # For agent processing
+        
+        return None
+    
+    return response
+        
+
+def handle_file_upload(uploaded_files) -> None:
+    """Store uploaded files in memory, avoiding duplicates.
+    
+    Args:
+        uploaded_files: List of files uploaded through st.file_uploader
+    """
+    if uploaded_files:
+        current_filenames = {filename for filename, _ in st.session_state.uploaded_files}
+        
+        for uploaded_file in uploaded_files:
+            if uploaded_file.name not in current_filenames:
+                st.session_state.uploaded_files.append((uploaded_file.name, uploaded_file.getvalue()))
+    
+    st.session_state.uploader_key += 1  # Force widget reset
 
 def clear_files() -> None:
     """Clear all uploaded files."""
-    for filepath in st.session_state.file_paths.values():
-        try:
-            Path(filepath).unlink(missing_ok=True)
-        except Exception as e:
-            st.error(f"Error deleting {filepath}: {e}")
-    st.session_state.file_paths.clear()
+    st.session_state.uploaded_files.clear()
     st.session_state.uploader_key += 1
 
 # Main UI
-st.title("Document Chat Interface")
-
-# File uploader
-uploaded_files = st.file_uploader(
-    "Drag & drop files or click to browse",
-    accept_multiple_files=True,
-    key=f"file_uploader_{st.session_state.uploader_key}",
-    help="Upload one or more files to analyze"
-)
-
-# Handle new file uploads
-if uploaded_files:
-    handle_file_upload(uploaded_files)
-    st.rerun()
+st.title("Data Cleaning Agent 🧹")
 
 # Main area shows either uploader or chat interface
 if st.session_state.show_chat:
-    # Show chat interface
-    st.success(f"💬 Chat Interface - {len(st.session_state.file_paths)} file(s) loaded")
-    
-    # Display chat history
+
     for role, message in st.session_state.chat_history:
-        with st.chat_message(role):
-            st.markdown(message)
+        if role == "assistant":
+            with st.chat_message("assistant", avatar="🤖"):
+                st.markdown(message)
+        elif role == "user":
+            with st.chat_message("user", avatar="👤"):
+                st.markdown(message)
+        elif role == "tool":
+            with st.chat_message("tool", avatar="🛠️"):
+                st.markdown(
+                    f"""
+                    <div style="border-radius: 0.5rem; border: 1px solid #ccc; padding: 0.5rem; margin: 0.5rem 0">
+                        {message}
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
     
-    # Chat input
-    if prompt := st.chat_input("Ask about your files..."):
-        st.session_state.chat_history.append(("user", prompt))
-        # Add a placeholder response
-        st.session_state.chat_history.append(("assistant", "Processing your question about the files..."))
-        st.rerun()
+    # Process user input
+    if (query := st.chat_input("Ask anything...")):
+
+        # Add user query to chat history
+        st.session_state.chat_history.append(("user", query)) # For streamlit rendering
+        st.session_state.agent_state["messages"].append(HumanMessage(content=query)) # For agent processing
+
+        with st.chat_message("user", avatar="👤"):
+            st.markdown(query)
+
+        # Invoke UI agent
+        try:
+            response = invoke_llm()
+
+            if response is None:
+                st.rerun()
+
+            # Add assistant response to chat history
+            st.session_state.chat_history.append(("assistant", response.content))
+            st.session_state.agent_state["messages"].append(AIMessage(content=response.content)) # For agent processing
+            st.rerun()
+        except Exception as e:
+            print(f"Error invoking UI agent: {e}")
+            response = "Error invoking UI agent, try again."
+
 else:
-    # Show uploader
-    if st.session_state.file_paths:
-        st.success(f"✅ {len(st.session_state.file_paths)} file(s) ready for processing")
+    # Show uploader when not in chat mode
+    uploaded_files = st.file_uploader(
+        label="Drag & drop files or click browse to select files to add",
+        accept_multiple_files=True,
+        key=f"file_uploader_{st.session_state.uploader_key}",
+        help="Upload one or more files to clean"
+    )
+
+    # Handle new file uploads
+    if uploaded_files:
+        handle_file_upload(uploaded_files)
+        st.rerun()
+
+    if st.session_state.uploaded_files:
+        st.success(f"✅ {len(st.session_state.uploaded_files)} file(s) ready for processing")
+        if st.button("Start Processing", type="primary"):
+            st.session_state.show_chat = True
+            st.session_state.chat_history.append(("assistant", "Hello! I am a data cleaning agent ready to help you analyze and clean you data files. Do you have any requirements for the data cleaning or should I initialize the cleaning process?"))
+            st.rerun()
     else:
         st.info("Upload files using the uploader above. View and manage files in the sidebar.")
 
@@ -86,7 +168,7 @@ with st.sidebar:
     st.markdown("<h3 style='font-size: 1.1em;'>Uploaded Files</h3>", unsafe_allow_html=True)
     
     # File list with fixed height and scroll
-    if st.session_state.file_paths:
+    if st.session_state.uploaded_files:
         # Add CSS for the file list
         st.markdown("""
         <style>
@@ -116,22 +198,17 @@ with st.sidebar:
             # Use markdown with HTML for the scrollable list
             file_items = '\n'.join(
                 f'<div class="file-item">{filename}</div>'
-                for filename in st.session_state.file_paths
+                for filename, _ in st.session_state.uploaded_files
             )
             st.markdown(
                 f'<div class="file-list-container">{file_items}</div>',
                 unsafe_allow_html=True
             )
         
-        col1, col2 = st.columns(2)
-        with col1:
+        # Show Clear All button only when not in chat mode
+        if not st.session_state.show_chat:
             if st.button("Clear All", type="secondary"):
                 clear_files()
-                st.rerun()
-        with col2:
-            if st.button("Start Processing", type="primary"):
-                st.session_state.show_chat = True
-                st.session_state.chat_history.append(("assistant", f"I'm ready to help you analyze {len(st.session_state.file_paths)} file(s). What would you like to know?"))
                 st.rerun()
     else:
         st.info("No files uploaded yet")

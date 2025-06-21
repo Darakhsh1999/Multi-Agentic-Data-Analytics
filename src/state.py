@@ -1,13 +1,15 @@
-from typing import TypedDict, Dict, List, Any
+from typing import Annotated, TypedDict, Dict, List, Any
 from pathlib import Path
-import pandas as pd
+from langchain_core.messages import BaseMessage
+from langgraph.graph.message import add_messages
+import uuid
+
 
 class AgentState(TypedDict, total=False):
     """State for the data cleaning agent."""
-    uploaded_file_paths: List[str]
+    messages: Annotated[List[BaseMessage], add_messages]
+    uuid: uuid.UUID
     memory_path: Path
-    current_df: Any  # Using Any to avoid Pydantic JSON schema issues with DataFrames
-    output: str
-    cleaned_file_paths: List[str]
-    cleaned_dataframes: Dict[str, Any]  # Using Any for the same reason
+    current_df: Any  # pd.DataFrame
+    indexed: bool
     debug: int

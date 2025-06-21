@@ -102,28 +102,3 @@ def load_file_context(file_path: Union[str, os.PathLike]) -> str:
     except Exception as e:
         return f"Error processing file {file_path}: {str(e)}"
     
-    
-def save_file(filename: str, content: str) -> str:
-    """Writes the index content to a file
-    This function takes the index content and writes it to a file at the specified path.
-    It returns a success message if the file is written successfully, or an error message if not.
-
-    Args:
-        filename (str): path to the file to write to
-        content (str): the index content to write
-
-    Returns:
-        str: success message if the file is written successfully, or an error message if not
-    """
-    
-    try:
-        with open(filename, "w") as f:
-            f.write(content)
-        return f"Successfully wrote contents to index file {filename}"
-    except Exception as e:
-        return f"Error writing to {filename}: {str(e)}"
-
-
-
-if __name__ == "__main__":
-   pass 
