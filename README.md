@@ -1,4 +1,4 @@
-# Distributed Data Analytics Agents
+# Multi-Agentic-Data-Analytics
 
 ### A production-ready, multi-agent framework that automates data ingestion, cleaning, and indexing with Large Language Models.
 
@@ -7,7 +7,7 @@
 ---
 
 ## Overview
-`distributed-data-analytics-agents` orchestrates specialised LangGraph/LangChain agents to transform raw datasets into analysis-ready assets. Upload a collection of CSV, Excel, PDF or text files and the system will:
+`multi-agentic-data-analytics` orchestrates specialised LangGraph/LangChain agents to transform raw datasets into analysis-ready assets. Upload a collection of CSV, Excel, PDF or text files and the system will:
 
 1. Profile and lint each file.
 2. Apply context-aware cleaning and normalisation.
@@ -32,7 +32,7 @@
 - **Streamlit** – interactive front-end
 - **LangChain + LangGraph** – agent framework & workflow orchestration
 - **Pandas** – data manipulation
-- **LLMs** – OpenAI GPT-4o *(optional)* or Qwen via **Ollama** *(default)*
+- **LLMs** – OpenAI GPT-4o & Qwen via **Ollama**
 
 ---
 
