@@ -1,5 +1,6 @@
 import os
 import uuid
+import time
 import graph
 import constants
 import os.path as osp
@@ -39,7 +40,7 @@ if "agent_state" not in st.session_state:
     st.session_state.agent_state = AgentState(
         uuid=st.session_state.uuid,
         messages=[],
-        debug=True,
+        debug=False,
         memory_path=osp.join('runs', st.session_state.uuid)
     )
 
@@ -149,6 +150,7 @@ if st.session_state.show_chat:
             elif isinstance(response, CompiledGraph): # Compiled graph
 
                 render_tool_meesage(f"Writing uploaded files to memory at {st.session_state.agent_state['memory_path']}")
+                time.sleep(2)
 
                 # Write uploaded file to memory
                 for filename, file_content in st.session_state.uploaded_files:
@@ -157,9 +159,27 @@ if st.session_state.show_chat:
 
                 compiled_graph: CompiledGraph = response
                 render_tool_meesage(f"Invoking graph")
-                result: AgentState = compiled_graph.invoke(st.session_state.agent_state)
-                st.session_state.agent_state = result
-                # TODO update chat history with tool calls and agent responses
+                time.sleep(2)
+
+                # Create an empty container for the loading message
+                loading_container = st.empty()
+
+                # Show loading message in the container
+                with loading_container:
+                    with st.chat_message("assistant", avatar="🤖"):
+                        with st.spinner("Data cleaning and indexing in progress..."):
+                            # Invoke graph
+                            output = compiled_graph.invoke(st.session_state.agent_state)
+                            st.session_state.agent_state = output
+                
+                # Clear the loading message
+                loading_container.empty()
+
+                with st.chat_message("assistant", avatar="🤖"):
+                    st.markdown(f"🎉 Data cleaning and indexing completed successfully. 🎉 \nYou can find the cleaned files in the output directory at {st.session_state.agent_state['memory_path']}")
+                
+                # Exit application
+                st.stop()
             else:
                 print(f"Unknown response type: {type(response)}")
                 

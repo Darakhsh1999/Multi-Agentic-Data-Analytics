@@ -72,7 +72,7 @@ if __name__ == "__main__":
     state = AgentState(
         uuid="3c6bb400-2ada-4681-90d3-d5d0ce12a67d",
         memory_path=os.path.join("runs", "3c6bb400-2ada-4681-90d3-d5d0ce12a67d"),
-        debug=1
+        debug=True
     )
 
     output_state = index_agent(state)

@@ -32,7 +32,7 @@ def data_clean_agent(state: AgentState) -> AgentState:
         result = agent_data_clean.invoke(
             HumanMessage(content="Please clean the data by using the available tools."),
             config={"recursion_limit": 30},
-            debug=(True if state["debug"] == 1 else False)
+            debug=state["debug"]
         )
         state.update(result)  # Update state with any changes from the agent
 
