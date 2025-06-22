@@ -12,7 +12,7 @@ from langchain_core.messages import (
 
 def index_agent(state: AgentState) -> AgentState:
 
-    if state["debug"] == 1:
+    if state["debug"]:
         print(f"Entered index_agent")
 
     # Load in data files from memory path
@@ -22,14 +22,16 @@ def index_agent(state: AgentState) -> AgentState:
         for file in files_:
             file_paths.append(os.path.abspath(os.path.join(root, file)))
     
-    if state["debug"] == 1:
-        print(f"Found {len(file_paths)} files")
+    if state["debug"]:
+        print(f"Found {len(file_paths)} files for indexing")
 
     content = ""
     for file_path in tqdm(file_paths):
 
         # Load in context and information about the file
-        file_content = load_file_context(file_path)[:1000]
+        file_content = load_file_context(file_path)
+        if len(file_content) > 2000:
+            file_content = f"Head of file: {file_content[:1000]} \n Tail of file: {file_content[-1000:]}"
         file_name = os.path.basename(file_path)
         file_type = os.path.splitext(file_path)[1]
         
@@ -52,8 +54,9 @@ def index_agent(state: AgentState) -> AgentState:
 
         content += file_info
 
+    # Write index to file
     try:
-        index_file_path = os.path.join(state["memory_path"], "index.txt")
+        index_file_path = os.path.join(state["memory_path"], "output", "index.txt")
         with open(index_file_path, "w") as f:
             f.write(content)
     except Exception as e:

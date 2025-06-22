@@ -20,7 +20,6 @@ from langchain_core.messages import (
 if 'uuid' not in st.session_state:
     uuid = str(uuid.uuid4())
     os.makedirs(osp.join('runs', uuid, "data"))
-    os.makedirs(osp.join('runs', uuid, "logs"))
     os.makedirs(osp.join('runs', uuid, "output"))
     st.session_state.uuid = uuid
 
@@ -49,7 +48,7 @@ def invoke_llm() -> BaseMessage | CompiledGraph:
 
     # Get chat history
     chat_history: List[BaseMessage] = st.session_state.agent_state["messages"]
-    chat_history[-1].content += "/nothink"
+    chat_history[-1].content += " /nothink"
 
     # Call the UI agent
     response = ui_llm.invoke([SystemMessage(content=constants.UI_AGENT_SYSTEM_PROMPT)] + chat_history)
@@ -67,15 +66,7 @@ def invoke_llm() -> BaseMessage | CompiledGraph:
             )) # For agent processing
         
         # Render tool call
-        with st.chat_message("tool", avatar="🛠️"):
-            st.markdown(
-                f"""
-                <div style="border-radius: 0.5rem; border: 1px solid #ccc; padding: 0.5rem; margin: 0.5rem 0">
-                    {f"Called tool: {tool_call["name"]} with args: {tool_call["args"]}"}
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+        render_tool_meesage(f"Called tool: {tool_call["name"]} with args: {tool_call["args"]}")
         
         return graph.create_graph()
 
@@ -103,13 +94,7 @@ def clear_files() -> None:
     st.session_state.uploaded_files.clear()
     st.session_state.uploader_key += 1
 
-# Main UI
-st.title("Data Cleaning Agent 🧹")
-
-# Main area shows either uploader or chat interface
-if st.session_state.show_chat:
-
-    # Render chat history
+def render_chat_history() -> None:
     for role, message in st.session_state.chat_history:
         if role == "assistant":
             with st.chat_message("assistant", avatar="🤖"):
@@ -118,15 +103,29 @@ if st.session_state.show_chat:
             with st.chat_message("user", avatar="👤"):
                 st.markdown(message)
         elif role == "tool":
-            with st.chat_message("tool", avatar="🛠️"):
-                st.markdown(
-                    f"""
-                    <div style="border-radius: 0.5rem; border: 1px solid #ccc; padding: 0.5rem; margin: 0.5rem 0">
-                        {message}
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
+            render_tool_meesage(message)
+
+def render_tool_meesage(message: str) -> None:
+
+    with st.chat_message("tool", avatar="🛠️"):
+        st.markdown(
+            f"""
+            <div style="border-radius: 0.5rem; border: 1px solid #ccc; padding: 0.5rem; margin: 0.5rem 0">
+                {message}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+
+# Main UI
+st.title("Data Cleaning Agent 🧹")
+
+# Main area shows either uploader or chat interface
+if st.session_state.show_chat:
+
+    # Render chat history
+    render_chat_history() 
     
     # Process user input
     if (query := st.chat_input("Ask anything...")):
@@ -149,12 +148,15 @@ if st.session_state.show_chat:
                 st.rerun()
             elif isinstance(response, CompiledGraph): # Compiled graph
 
+                render_tool_meesage(f"Writing uploaded files to memory at {st.session_state.agent_state['memory_path']}")
+
                 # Write uploaded file to memory
                 for filename, file_content in st.session_state.uploaded_files:
                     with open(os.path.join(st.session_state.agent_state["memory_path"], "data", filename), "wb") as f:
                         f.write(file_content)
 
                 compiled_graph: CompiledGraph = response
+                render_tool_meesage(f"Invoking graph")
                 result: AgentState = compiled_graph.invoke(st.session_state.agent_state)
                 st.session_state.agent_state = result
                 # TODO update chat history with tool calls and agent responses
@@ -166,6 +168,7 @@ if st.session_state.show_chat:
             response = "Error invoking UI agent, try again."
 
 else:
+
     # Show uploader when not in chat mode
     uploaded_files = st.file_uploader(
         label="Drag & drop files or click browse to select files to add",
@@ -184,6 +187,7 @@ else:
         if st.button("Start Processing", type="primary"):
             st.session_state.show_chat = True
             st.session_state.chat_history.append(("assistant", "Hello! I am a data cleaning agent ready to help you analyze and clean you data files. Do you have any requirements for the data cleaning or should I initialize the cleaning process?"))
+            st.session_state.agent_state["messages"].append(SystemMessage(content="Hello! I am a data cleaning agent ready to help you analyze and clean you data files. Do you have any requirements for the data cleaning or should I initialize the cleaning process?"))
             st.rerun()
     else:
         st.info("Upload files using the uploader above. View and manage files in the sidebar.")

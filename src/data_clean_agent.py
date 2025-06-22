@@ -22,7 +22,6 @@ def data_clean_agent(state: AgentState) -> AgentState:
     # Filter out only tabular files
     tabular_files = list(filter(lambda x: x.split(".")[-1] in tabular_formats, file_paths))
 
-
     for file in tqdm(tabular_files, desc="Processing files"):
 
         # Load in data file
@@ -30,18 +29,13 @@ def data_clean_agent(state: AgentState) -> AgentState:
         set_dataframe(df)
 
         # Run agent with state
-        print("INITIAL STATE", state)
-        print(5*"\n")
-        input("Press Enter to continue...")
         result = agent_data_clean.invoke(
             HumanMessage(content="Please clean the data by using the available tools."),
             config={"recursion_limit": 30},
             debug=(True if state["debug"] == 1 else False)
         )
-        print(5*"\n")
-        print("REEEEEESULT", result, type(result))
-        print(5*"\n")
         state.update(result)  # Update state with any changes from the agent
+
         # Save cleaned file
         cleaned_file_name = f"cleaned_{os.path.basename(file)}"
         cleaned_file_path = os.path.join(state["memory_path"], "output", cleaned_file_name)
@@ -49,6 +43,8 @@ def data_clean_agent(state: AgentState) -> AgentState:
         cleaned_df.to_csv(cleaned_file_path, index=False)
 
     return state
+
+
 
 
 if __name__ == "__main__":
