@@ -1,9 +1,7 @@
 # Distributed Data Analytics Agents
+
 Multi-agent system performing agentic data cleaning
 
+[![Demo Video](https://cdn.loom.com/sessions/thumbnails/e1595ccafa004ec1887eb939d96410cb-with-play.png)](https://www.loom.com/share/e1595ccafa004ec1887eb939d96410cb?sid=e26f1db6-0067-4a8b-9c90-003984f3dc2f)
 
-<div style="position: relative; padding-bottom: 56.25%; height: 0;"><iframe src="https://www.loom.com/share/e1595ccafa004ec1887eb939d96410cb?sid=5dbaab44-8053-492b-9593-b863a13fc380" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div>
-
-
-
-<div style="position: relative; padding-bottom: 56.25%; height: 0;"><iframe src="https://www.loom.com/embed/e1595ccafa004ec1887eb939d96410cb?sid=ba4260a3-fc7c-4966-bbe9-660aea476dfe" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div>
+[![Demo Video]](https://www.loom.com/share/e1595ccafa004ec1887eb939d96410cb?sid=e26f1db6-0067-4a8b-9c90-003984f3dc2f)
