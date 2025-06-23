@@ -2,7 +2,7 @@
 
 ### A production-ready, multi-agent framework that automates data ingestion, cleaning, and indexing with Large Language Models.
 
-[![Demo Video](https://cdn.loom.com/sessions/thumbnails/e1595ccafa004ec1887eb939d96410cb-f539aa7e878733ee-full-play.gif)](https://www.loom.com/share/e1595ccafa004ec1887eb939d96410cb?sid=e26f1db6-0067-4a8b-9c90-003984f3dc2f)
+[![Demo Video](https://cdn.loom.com/sessions/thumbnails/e1595ccafa004ec1887eb939d96410cb-f539aa7e878733ee-full-play.gif)](https://www.loom.com/embed/e1595ccafa004ec1887eb939d96410cb?sid=e26f1db6-0067-4a8b-9c90-003984f3dc2f)
 
 ---
 
